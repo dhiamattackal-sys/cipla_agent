@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Cipla Cardiac Opportunity Agent</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Calibri, sans-serif; font-size: 13px; color: #1a1a1a; background: #fff; padding: 24px 32px; max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; color: #003D99; }
+  .sub { color: #666; font-size: 12px; margin-bottom: 20px; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 18px 0; }
+  label { font-weight: 600; font-size: 12px; display: block; margin-bottom: 5px; }
+  select, input[type=range] { font-size: 12px; }
+  select { padding: 5px 8px; border: 1px solid #ccc; border-radius: 3px; width: 260px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+  th { text-align: left; padding: 6px 10px; border-bottom: 2px solid #003D99; font-weight: 600; color: #003D99; font-size: 11px; }
+  td { padding: 6px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr.top td { font-weight: 600; background: #EEF2FF; }
+  tr:hover td { background: #f9f9f9; }
+  .score { font-weight: 700; }
+  .up { color: #1a7a4a; }
+  .dn { color: #888; }
+  .section { margin-bottom: 22px; }
+  .section-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #003D99; border-left: 3px solid #003D99; padding-left: 8px; }
+  .weight-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; }
+  .weight-row label { margin: 0; width: 180px; font-weight: normal; }
+  .weight-row input { width: 140px; }
+  .weight-row span { width: 34px; font-weight: 600; color: #003D99; }
+  .btn { background: #003D99; color: white; border: none; padding: 6px 16px; font-size: 12px; cursor: pointer; border-radius: 3px; }
+  .btn:hover { background: #1e40af; }
+  .detail-box { background: #f7f7f7; border: 1px solid #ddd; padding: 14px 16px; margin-top: 12px; font-size: 12px; line-height: 1.7; }
+  .detail-box b { color: #003D99; }
+  .warn { color: #666; font-size: 11px; margin-top: 6px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .api-row { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
+  .api-row input { flex: 1; padding: 5px 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; font-family: inherit; }
+  #chat-out { border: 1px solid #ddd; padding: 12px; min-height: 120px; max-height: 260px; overflow-y: auto; font-size: 12px; line-height: 1.7; white-space: pre-wrap; background: #fafafa; margin-bottom: 8px; }
+  #chat-in { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; font-family: inherit; }
+  .msg-u { color: #003D99; }
+  .msg-a { color: #1a1a1a; }
+</style>
+</head>
+<body>
+
+<h1>Cipla Cardiac Opportunity Agent</h1>
+<div class="sub">IMS/IQVIA Cardiac Dataset · MAT Feb 2024–2026 · 7,452 SKUs · 14 sub-segments · Cipla Ascend Season 4</div>
+<hr>
+
+<div class="grid2">
+
+<!-- LEFT: rankings + detail -->
+<div>
+  <div class="section">
+    <div class="section-title">Segment Rankings</div>
+    <table id="rank-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Segment</th><th>Market (₹Cr)</th><th>YoY</th><th>2yr Vol</th><th># Cos</th><th>Cipla %</th><th>Score</th>
+        </tr>
+      </thead>
+      <tbody id="rank-body"></tbody>
+    </table>
+    <div class="warn">Score = weighted composite (Market Attractiveness 35% + Future Potential 30% + Competition 20% + Cipla Fit 15%)</div>
+  </div>
+
+  <div class="section">
+    <label for="seg-select">Segment detail</label>
+    <select id="seg-select" onchange="showDetail()"></select>
+    <div class="detail-box" id="detail-box">Select a segment above.</div>
+  </div>
+</div>
+
+<!-- RIGHT: weights + ask -->
+<div>
+  <div class="section">
+    <div class="section-title">Adjust Weights</div>
+    <div class="weight-row"><label>Market Attractiveness</label><input type="range" id="w1" min="5" max="70" value="35" oninput="updateW()"><span id="v1">35%</span></div>
+    <div class="weight-row"><label>Future Potential</label><input type="range" id="w2" min="5" max="70" value="30" oninput="updateW()"><span id="v2">30%</span></div>
+    <div class="weight-row"><label>Competitive Intensity</label><input type="range" id="w3" min="5" max="70" value="20" oninput="updateW()"><span id="v3">20%</span></div>
+    <div class="weight-row"><label>Cipla Strategic Fit</label><input type="range" id="w4" min="5" max="70" value="15" oninput="updateW()"><span id="v4">15%</span></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
+      <button class="btn" onclick="recalc()">Recalculate</button>
+      <span id="wtotal" style="font-size:11px;color:#c00;"></span>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="section">
+    <div class="section-title">Ask the Agent</div>
+    <div class="api-row">
+      <input type="password" id="api-key" placeholder="Paste Anthropic API key (sk-ant-…)" />
+      <button class="btn" onclick="saveKey()">Save</button>
+    </div>
+    <div id="chat-out">Agent ready. Enter your API key and ask a question.</div>
+    <input type="text" id="chat-in" placeholder="e.g. Why is Statin Combos ranked #1?" onkeydown="if(event.key==='Enter')sendQ()" />
+    <div class="warn" style="margin-top:4px;">Press Enter to send · Powered by Claude · Key stored in browser only</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const DATA = [
+  {name:'Statins Comb.',       mat:4153.6, yoy:17.4, vol:34.9, cos:156, cshare:1.39},
+  {name:'AHT Triple/Poly',     mat:1473.3, yoy:18.6, vol:38.4, cos:109, cshare:0.67},
+  {name:'Oth. Lipid Red.',     mat:722.8,  yoy:45.6, vol:174.6,cos:43,  cshare:0.0},
+  {name:'Nicorandil',          mat:493.4,  yoy:18.7, vol:29.5, cos:24,  cshare:0.0},
+  {name:'AHT Dual Comb.',      mat:5279.7, yoy:12.6, vol:24.5, cos:204, cshare:3.21},
+  {name:'Statins Plain',       mat:2820.8, yoy:11.8, vol:17.7, cos:166, cshare:2.29},
+  {name:'CCB',                 mat:2108.9, yoy:11.4, vol:19.9, cos:113, cshare:1.18},
+  {name:'ARBs',                mat:2086.6, yoy:8.8,  vol:14.1, cos:183, cshare:0.69},
+  {name:'AHT Diuretic Comb.',  mat:2471.3, yoy:7.2,  vol:13.0, cos:179, cshare:0.62},
+  {name:'Alfa Blockers',       mat:409.3,  yoy:8.8,  vol:11.8, cos:16,  cshare:0.0},
+  {name:'Nitrates',            mat:663.4,  yoy:8.6,  vol:15.3, cos:62,  cshare:0.01},
+  {name:'Fibrates',            mat:114.1,  yoy:15.3, vol:25.5, cos:12,  cshare:24.32},
+  {name:'Other AHTs',          mat:223.5,  yoy:21.7, vol:35.9, cos:25,  cshare:0.0},
+  {name:'ACEi',                mat:219.5,  yoy:-2.3, vol:-11.1,cos:47,  cshare:2.57},
+];
+
+const DETAIL = {
+  'Statins Comb.':      '<b>Key insight:</b> Rosuvastatin+Ezetimibe growing +267% in 2yr (₹183 Cr). Atorvastatin+Ezetimibe +99%. Cipla has ATORLIP and ROSULIP — can extend to combos at low cost.\n<b>Top competitor:</b> USV (25% share), SUN (12%), Lupin (10%).\n<b>Cipla action:</b> Launch ROSULIP-EZ and ATORLIP-EZ. Leverage existing Vitalis Cardiac MR force.',
+  'AHT Triple/Poly':    '<b>Key insight:</b> Cilnidipine+Metoprolol+Telmisartan sub-class +75% in 2yr (₹233 Cr). Cipla owns all 3 ingredient brands (AMLOPRES, CRESAR, METOLAR). METOLAR TRIO exists but only ₹2.6 Cr — under-detailed.\n<b>Top competitor:</b> SUN (9.5%), Mankind (8.9%) — no single dominant player.\n<b>Cipla action:</b> Scale Cilnidipine+Metoprolol+Telmisartan via Vitalis Cardiac.',
+  'Oth. Lipid Red.':    '<b>Key insight:</b> Saroglitazar ₹538 Cr +181% 2yr (Zydus 80% monopoly). Inclisiran ₹60 Cr +2,557% 2yr (Novartis-led injectable). Ezetimibe standalone ₹53 Cr +84% — generic play.\n<b>Cipla position:</b> Zero revenue. Ezetimibe is accessible now. Saroglitazar requires IP monitoring.\n<b>Cipla action:</b> File Ezetimibe dossier. Explore Inclisiran co-marketing.',
+  'Nicorandil':         '<b>Key insight:</b> ₹483 Cr, +30% 2yr, only 24 companies. Torrent dominant at 52%. Cipla completely absent despite having anti-anginal detailing force.\n<b>Cipla action:</b> Selective entry with differentiated positioning (combination or pricing play).',
+  'AHT Dual Comb.':     '<b>Key insight:</b> Largest cardiac segment. Cipla at 3.2% with AMLOPRES-AT (₹96 Cr anchor brand). Fragmented — no player above 12.4%. Fastest-growing sub-class: Bisoprolol+Telmisartan +273% 2yr, Cilnidipine+Telmisartan +60% 2yr.\n<b>Cipla action:</b> Defend AMLOPRES-AT. Upgrade mix toward faster-growing sub-classes.',
+  'Statins Plain':      '<b>Key insight:</b> Rosuvastatin (₹1,804 Cr, +13% YoY) is the dominant molecule. Sun leads at 35% overall. Cipla has ROSULIP and ATORLIP. Steady-state segment — no major upside.\n<b>Cipla action:</b> Maintain positions, resist price erosion, shift effort toward Statin Combos.',
+  'CCB':                '<b>Key insight:</b> Torrent dominates at 45% — almost impossible to dislodge. Cilnidipine growing fastest (+36% 2yr, ₹976 Cr). Amlodipine declining in share.\n<b>Cipla action:</b> Do not invest in plain CCB. Redirect Cilnidipine efforts to combos.',
+  'ARBs':               '<b>Key insight:</b> Glenmark 30% dominant. Cipla CRESAR declining -13% YoY. Telmisartan growing but Cipla not capturing it.\n<b>Cipla action:</b> Harvest, do not reinvest. Redirect into ARB-based combos.',
+  'AHT Diuretic Comb.': '<b>Key insight:</b> Telmisartan+HCT (₹1,063 Cr) and Chlortalidone+Telmisartan (₹640 Cr) are the big movers. Glenmark 24% share.\n<b>Cipla action:</b> Selective focus on Chlortalidone combinations if capacity allows.',
+  'Alfa Blockers':       '<b>Key insight:</b> Pfizer (60%) and Sun (31%) control this segment. Prazosin is 99% of the segment — Cipla absent despite Prazosin being off-patent.\n<b>Cipla action:</b> Low priority. Generic Prazosin if opportunistic.',
+  'Nitrates':            '<b>Key insight:</b> Glyceryl Trinitrate dominates (₹504 Cr). Cipla has <0.01% share. Modi Mundipharma + Abbott control.\n<b>Cipla action:</b> Avoid.',
+  'Fibrates':            '<b>Key insight:</b> Cipla\'s FENOLIP has 24% share in this small (₹114 Cr) segment. USV leads at 34%. Fenofibrate growing +29% 2yr.\n<b>Cipla action:</b> Maintain FENOLIP. Look for Fenofibrate+Statin combos (already in Statin Comb. segment).',
+  'Other AHTs':          '<b>Key insight:</b> Clonidine +54% 2yr, Moxonidine +30%. Torrent 42% dominant. Cipla absent.\n<b>Cipla action:</b> Not a priority.',
+  'ACEi':                '<b>Key insight:</b> Declining segment — Ramipril down, Enalapril down. Cipla CIPRIL declining -22% YoY (fastest fall). Emcure leads at 36%.\n<b>Cipla action:</b> Do not reinvest. Harvest remaining sales and redeploy MR force.',
+};
+
+let W = {w1:35,w2:30,w3:20,w4:15};
+let ranked = [];
+let apiKey = localStorage.getItem('cia_key')||'';
+
+function normalize(arr) {
+  const mn=Math.min(...arr), mx=Math.max(...arr);
+  if(mx===mn) return arr.map(()=>50);
+  return arr.map(v=>((v-mn)/(mx-mn))*100);
+}
+
+function score() {
+  const size=normalize(DATA.map(d=>d.mat));
+  const growth=normalize(DATA.map(d=>d.yoy*1.5+d.vol));
+  const comp=normalize(DATA.map(d=>-d.cos));
+  const fit=normalize(DATA.map(d=>Math.min(d.cshare*3,50)+(d.cshare>0?15:0)));
+  return DATA.map((d,i)=>({
+    ...d,
+    s: Math.round((size[i]+growth[i])/2*W.w1/100 + growth[i]*W.w2/100 + comp[i]*W.w3/100 + fit[i]*W.w4/100)
+  })).sort((a,b)=>b.s-a.s);
+}
+
+function render() {
+  ranked = score();
+  const tbody = document.getElementById('rank-body');
+  tbody.innerHTML = ranked.map((r,i)=>`
+    <tr class="${i<3?'top':''}">
+      <td>${i+1}</td>
+      <td>${r.name}</td>
+      <td>₹${r.mat.toLocaleString('en-IN',{maximumFractionDigits:0})}</td>
+      <td class="${r.yoy>=0?'up':'dn'}">${r.yoy>=0?'+':''}${r.yoy.toFixed(1)}%</td>
+      <td class="${r.vol>=0?'up':'dn'}">${r.vol>=0?'+':''}${r.vol.toFixed(1)}%</td>
+      <td>${r.cos}</td>
+      <td>${r.cshare.toFixed(1)}%</td>
+      <td class="score">${r.s}</td>
+    </tr>`).join('');
+
+  const sel = document.getElementById('seg-select');
+  const cur = sel.value;
+  sel.innerHTML = ranked.map(r=>`<option value="${r.name}">${r.name}</option>`).join('');
+  if(cur) sel.value=cur;
+  showDetail();
+}
+
+function showDetail() {
+  const name = document.getElementById('seg-select').value;
+  const r = ranked.find(x=>x.name===name);
+  if(!r) return;
+  const rank = ranked.indexOf(r)+1;
+  document.getElementById('detail-box').innerHTML =
+    `<b>${r.name}</b>  ·  Rank ${rank}  ·  Score ${r.s}/100\n` +
+    `Market ₹${r.mat.toFixed(0)} Cr  ·  YoY ${r.yoy>=0?'+':''}${r.yoy.toFixed(1)}%  ·  2yr vol ${r.vol>=0?'+':''}${r.vol.toFixed(1)}%  ·  ${r.cos} companies  ·  Cipla ${r.cshare.toFixed(1)}%\n\n`+
+    (DETAIL[name]||'No detail available.').replace(/\n/g,'<br>');
+}
+
+function updateW() {
+  ['w1','w2','w3','w4'].forEach(k=>{
+    W[k]=parseInt(document.getElementById(k).value);
+    document.getElementById('v'+k.slice(1)).textContent=W[k]+'%';
+  });
+  const total=W.w1+W.w2+W.w3+W.w4;
+  document.getElementById('wtotal').textContent = total!==100 ? `Total: ${total}% — must be 100%` : '';
+}
+
+function recalc() {
+  const total=W.w1+W.w2+W.w3+W.w4;
+  if(total!==100){alert('Weights must sum to 100%. Currently '+total+'%.');return;}
+  render();
+}
+
+function saveKey() {
+  const k=document.getElementById('api-key').value.trim();
+  if(!k){alert('Enter a key first.');return;}
+  apiKey=k; localStorage.setItem('cia_key',k);
+  document.getElementById('chat-out').textContent='API key saved. Ask a question below.';
+}
+
+const SYS = `You are a pharmaceutical market analyst for Cipla. You have the Indian cardiac market dataset (MAT Feb 2024-2026). Key facts: market ₹23,244 Cr +13.3% YoY, Cipla ₹389 Cr 1.68% share. Top 3 opportunities: (1) Statin Combos ₹4,154 Cr +17% — Rosu+Ez growing +267% 2yr, Cipla has ATORLIP/ROSULIP brands; (2) AHT Triple/Poly ₹1,473 Cr +19% — Cilnidipine+Metoprolol+Telmisartan +75% 2yr, Cipla owns all 3 ingredient brands; (3) Novel Lipid Reducers ₹723 Cr +46% — Saroglitazar +181%, Cipla absent. Avoid: ACEi declining, plain ARBs (Glenmark 30%), plain CCB (Torrent 45%). Answer concisely with specific numbers. No bullet points or formatting — plain text only.`;
+
+async function sendQ() {
+  const q=document.getElementById('chat-in').value.trim();
+  if(!q)return;
+  if(!apiKey){alert('Add API key first.');return;}
+  document.getElementById('chat-in').value='';
+  const out=document.getElementById('chat-out');
+  out.innerHTML+=`\n<span class="msg-u">Q: ${q}</span>\n`;
+  out.scrollTop=out.scrollHeight;
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:400,system:SYS,messages:[{role:'user',content:q}]})
+    });
+    const d=await res.json();
+    const reply=d.content?.map(b=>b.text||'').join('')||'Error.';
+    out.innerHTML+=`<span class="msg-a">A: ${reply}</span>\n`;
+  } catch(e) {
+    out.innerHTML+=`<span class="msg-a">Error: ${e.message}</span>\n`;
+  }
+  out.scrollTop=out.scrollHeight;
+}
+
+if(apiKey) document.getElementById('api-key').value=apiKey;
+render();
+</script>
+</body>
+</html>
